@@ -5,6 +5,10 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
+    
+class PostReturn(Post):
+    id: int
+    owner_id: int
 
 class UserCreate(BaseModel):
     email: EmailStr

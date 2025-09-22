@@ -8,7 +8,7 @@ import time
 
 from sqlalchemy.orm import Session
 from .. import models, oauth2
-from ..schemas import Post, UserCreate, UserOut
+from ..schemas import Post, UserCreate, UserOut, PostReturn
 from ..database import session, engine, get_db
 
 #from psycopg.extras import RealDictCursor
@@ -20,7 +20,7 @@ router = APIRouter(
     #tags is a list, you can put multiple tags for a router
     )
 
-@router.get("/", response_model=List[Post])
+@router.get("/", response_model=List[PostReturn])
 async def get_posts(db: Session = Depends(get_db)):
     # cursor.execute("""SELECT * FROM posts""")
     # posts = cursor.fetchall()
@@ -28,18 +28,18 @@ async def get_posts(db: Session = Depends(get_db)):
     return posts
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=Post)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=PostReturn)
 def create_post(payLoad: Post, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""", (payLoad.title, payLoad.content, payLoad.published))
     # new_post = cursor.fetchone()
     # conn.commit()
-    new_post = models.Post(**payLoad.model_dump())
+    new_post = models.Post(owner_id=current_user.id, **payLoad.model_dump())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
     return new_post
 
-@router.get("/{id}", response_model=Post)
+@router.get("/{id}", response_model=PostReturn)
 def return_post(id: int, response: Response, db: Session = Depends(get_db)):
     test_post = db.query(models.Post).filter(models.Post.id == id).first()
     if not test_post:
@@ -53,12 +53,15 @@ def delete_post(id:int, response: Response, db: Session = Depends(get_db), curre
     deleted_post = db.query(models.Post).filter(models.Post.id == id).first()
     if not deleted_post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id of {id} not found")
+    if deleted_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to delete this post")
+
     db.delete(deleted_post)
     db.commit()
     print(deleted_post)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-@router.put("/{id}", response_model=Post)
+@router.put("/{id}", response_model=PostReturn)
 def update_posts(id: int, updated_post: Post, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
     # updated_post = cursor.fetchone()
@@ -66,6 +69,8 @@ def update_posts(id: int, updated_post: Post, db: Session = Depends(get_db), cur
     post = post_query.first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id of {id} not found")
+    if post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorised to edit this post")
     post_query.update(updated_post.model_dump())
-    db.commit()
+    db.commit() 
     return post_query.first()
