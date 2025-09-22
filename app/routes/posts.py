@@ -7,9 +7,10 @@ import psycopg
 import time
 
 from sqlalchemy.orm import Session
-from .. import models
+from .. import models, oauth2
 from ..schemas import Post, UserCreate, UserOut
 from ..database import session, engine, get_db
+
 #from psycopg.extras import RealDictCursor
 
 
@@ -28,7 +29,7 @@ async def get_posts(db: Session = Depends(get_db)):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=Post)
-def create_post(payLoad: Post, db: Session = Depends(get_db)):
+def create_post(payLoad: Post, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     # cursor.execute("""INSERT INTO posts (title, content, published) VALUES (%s, %s, %s) RETURNING *""", (payLoad.title, payLoad.content, payLoad.published))
     # new_post = cursor.fetchone()
     # conn.commit()
@@ -46,7 +47,7 @@ def return_post(id: int, response: Response, db: Session = Depends(get_db)):
     return test_post
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id:int, response: Response, db: Session = Depends(get_db)):
+def delete_post(id:int, response: Response, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     # cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""", (str(id),))
     # deleted_post = cursor.fetchone()
     deleted_post = db.query(models.Post).filter(models.Post.id == id).first()
@@ -58,7 +59,7 @@ def delete_post(id:int, response: Response, db: Session = Depends(get_db)):
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @router.put("/{id}", response_model=Post)
-def update_posts(id: int, updated_post: Post, db: Session = Depends(get_db)):
+def update_posts(id: int, updated_post: Post, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
     # updated_post = cursor.fetchone()
     post_query = db.query(models.Post).filter(models.Post.id == id)
