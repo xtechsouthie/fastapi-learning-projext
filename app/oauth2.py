@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from jwt.exceptions import InvalidTokenError
 
-SECRET_KEY = "helloworld"
+SECRET_KEY = "helloworld" #i am lazy to put this in .gitignore
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
