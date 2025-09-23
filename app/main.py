@@ -32,7 +32,7 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "welcome to my crib motherfucing nigg"}
+    return {"message": "Hello world this is my fastapi project"}
 
 app.include_router(posts.router)
 app.include_router(users.router)
