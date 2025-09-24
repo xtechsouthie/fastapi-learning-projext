@@ -12,10 +12,22 @@ from . import models
 from .schemas import Post, UserCreate, UserOut
 from .database import session, engine, get_db
 from .routes import posts, users, auth
+from fastapi.middleware.cors import CORSMiddleware
 #from psycopg.extras import RealDictCursor
 
-models.Base.metadata.create_all(bind=engine)
+#models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+) 
+
     
 # while True:
 #     try:
